@@ -114,7 +114,8 @@ sub clean_utf8 {
     my $text = shift;
     eval {
           my $utf = decode('utf-8', $text, 1);
-          $text = unidecode($utf);
+          # $text = unidecode($utf);
+          $text = $utf;
       };
     return $text;
 }
@@ -167,12 +168,12 @@ sub format_VT($)
     {
 	# Since message is the default class, strip it and just use the
 	# instance name, in square brackets.
-	$dest = '['.clean_utf8($m->instance).']';
+	$dest = '['.$m->instance.']';
     }
     else
     {
 	# If the defaults aren't being used, show both class and instance.
-	$dest = $m->context.'['.clean_utf8($m->instance).']';
+	$dest = $m->context.'['.$m->instance.']';
     }
 
     $dest =~ s/[[:cntrl:]]//g;
@@ -508,18 +509,12 @@ sub format_body
   # Tab to eight spaces. Why are people sending tabs anyhow?
   $rawBody =~ s/\t/        /g;
 
-  # Deal with UTF-8 "smart quotes"
-  $rawBody =~ s/\xE2\x80(?:\x98|\x99)/'/g;
-  $rawBody =~ s/\xE2\x80(?:\x9C|\x9D)/"/g;
-  $rawBody =~ s/\xE2\x80\x94/.../g;
-  $rawBody =~ s/\xE2\x99\xb3/1/g;
-
   # This cleans up other peoples formatting. I can see what they meant, but it
   # doesn't muck with my display. 
   # Basically, double up the '@'s in these formatting messages such that they
   # no longer work. Also, fix backspace issues.
   $rawBody =~ s/\@font\(fixed\)$//; # GAIM is broken.
-  $rawBody =~ s/@/@@/g;
+  $rawBody =~ s/@/@<@>/g;
 
   if($m->type eq 'zephyr' && $m->class eq 'MAIL') {
       $rawBody = unidecode(decode('MIME-Header', $rawBody));
