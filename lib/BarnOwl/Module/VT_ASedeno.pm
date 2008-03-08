@@ -6,10 +6,10 @@ package BarnOwl::Module::VT_ASedeno;
 use BarnOwl::Hooks;
 
 use Text::Autoformat;
-use Text::Unidecode;
 use HTML::WikiConverter;
 use Encode qw(encode decode);
 use Encode::MIME::Header;
+use WWW::Mechanize;
 
 *boldify = \&BarnOwl::Style::boldify;
 
@@ -470,6 +470,26 @@ sub format_VT_IRC($)
     return $zVT;
 }
 
+sub url_title {
+    my $url = shift;
+    my $mech = WWW::Mechanize->new;
+    $mech->get($url);
+    return $mech->title;
+}
+
+sub youtube_title {
+    my $url = shift;
+    my $title = url_title($url);
+    $title =~ s/^YouTube - //;
+    return $title;
+}
+
+sub tag_youtube {
+    my $body = shift;
+    $body =~ s{(http://(?:www[.])?youtube[.]com/watch\S+)}{"$1 [".youtube_title($1)."]"}ge;
+    return $body;
+}
+
 ################################################################################
 # Universal body formatter.
 ################################################################################
@@ -503,12 +523,6 @@ sub format_body
     $rawBody =~ s/[\cH]//g;
   }
 
-  # Kill leading <BODY> tags. AIM troubles.
-  $rawBody =~ s/^<BODY>//;
-
-  # Tab to eight spaces. Why are people sending tabs anyhow?
-  $rawBody =~ s/\t/        /g;
-
   # This cleans up other peoples formatting. I can see what they meant, but it
   # doesn't muck with my display. 
   # Basically, double up the '@'s in these formatting messages such that they
@@ -521,6 +535,8 @@ sub format_body
   } else {
       $rawBody = clean_utf8($rawBody);
   }
+
+  $rawBody = tag_youtube($rawBody);
 
   # This is a really dumb formatting test. If the message has any newlines 
   # followed by whitespace followed by non whitespace, I'll assume the sender
