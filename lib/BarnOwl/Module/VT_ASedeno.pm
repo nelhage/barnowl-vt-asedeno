@@ -474,7 +474,7 @@ sub url_title {
     my $url = shift;
     my $mech = WWW::Mechanize->new;
     $mech->get($url);
-    return $mech->title;
+    return clean_utf8($mech->title);
 }
 
 sub youtube_title {
@@ -531,7 +531,7 @@ sub format_body
   $rawBody =~ s/@/@<@>/g;
 
   if($m->type eq 'zephyr' && $m->class eq 'MAIL') {
-      $rawBody = unidecode(decode('MIME-Header', $rawBody));
+      $rawBody = decode('MIME-Header', $rawBody);
   } else {
       $rawBody = clean_utf8($rawBody);
   }
@@ -576,6 +576,13 @@ sub format_body
         my $wc = HTML::WikiConverter->new(dialect => 'Markdown');
         $rawBody = $wc->html2wiki($rawBody);
         $rawBody =~ s/\\(?=[`*_\\])//g;
+        my %esc = (
+            gt   => '>',
+            lt   => '<',
+            amp  => '&',
+            quot => '"',
+           );
+        $rawBody =~ s/&(\w+);/$esc{$1}/eg;
     }
     $body = autoformat $rawBody, {left => $hwidth + 1,
                                   right => $hwidth + $bwidth - 2,
