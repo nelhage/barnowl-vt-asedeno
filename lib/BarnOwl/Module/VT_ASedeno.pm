@@ -588,6 +588,7 @@ sub format_body
                                   right => $hwidth + $bwidth - 2,
                                   all => 1,
                                   renumber => 0};
+    $body = "" unless defined($body);
     $body =~ s/^\s+/ /;
     $body =~ s/\s+$//;
   }
