@@ -13,6 +13,11 @@ use WWW::Mechanize;
 
 *boldify = \&BarnOwl::Style::boldify;
 
+BarnOwl::new_variable_bool('vta:escape_formatting', {
+    default => 'on',
+    summary => "Escape z-formatting in BarnOwl::Style::VT_ASedeno"
+   });
+
 ################################################################################
 #Run this on start and reload. Adds styles, sets style to start.
 ################################################################################
@@ -117,6 +122,14 @@ sub clean_utf8 {
           # $text = unidecode($utf);
           $text = $utf;
       };
+    return $text;
+}
+
+sub zescape {
+    my $text = shift;
+    if(BarnOwl::getvar('vta:escape_formatting') eq 'on') {
+        $text =~ s/@/@@/g;
+    }
     return $text;
 }
 
@@ -528,7 +541,7 @@ sub format_body
   # Basically, double up the '@'s in these formatting messages such that they
   # no longer work. Also, fix backspace issues.
   $rawBody =~ s/\@font\(fixed\)$//; # GAIM is broken.
-  $rawBody =~ s/@/@<@>/g;
+  $rawBody = zescape($rawBody);
 
   if($m->type eq 'zephyr' && $m->class eq 'MAIL') {
       $rawBody = decode('MIME-Header', $rawBody);
@@ -607,7 +620,7 @@ sub format_body
       # Kill leading whitespace
       $sig =~ s/^\s*//;
 
-      1 while $sig =~ s/@/@@/g;
+      $sig = zescape($sig);
 
       # Unlike zephyr bodies, I'm unwrapping zsigs no matter what.
       my @words = split (/\s+/, $sig);
