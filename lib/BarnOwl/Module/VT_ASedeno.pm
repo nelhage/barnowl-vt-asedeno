@@ -14,7 +14,7 @@ use WWW::Mechanize;
 *boldify = \&BarnOwl::Style::boldify;
 
 BarnOwl::new_variable_bool('vta:escape_formatting', {
-    default => 'on',
+    default => 1,
     summary => "Escape z-formatting in BarnOwl::Style::VT_ASedeno"
    });
 
@@ -24,7 +24,7 @@ BarnOwl::new_variable_bool('vta:escape_formatting', {
 sub onStart
 {
     my $reload = shift;
-    bindings_VT() unless $reload;
+    init_VT();
 }
 
 $BarnOwl::Hooks::startup->add(\&onStart);
@@ -32,6 +32,13 @@ $BarnOwl::Hooks::startup->add(\&onStart);
 ################################################################################
 # Branching point for various formatting functions in this style.
 ################################################################################
+
+sub format_time {
+    my $m = shift;
+    my ($time) = $m->time =~ /(\d\d:\d\d)/;
+    return $time;
+}
+
 sub format_msg($)
 {
     my $m = shift;
@@ -75,16 +82,13 @@ our %VT_Options =
      "stripMitEdu" => 1,
      "narrowMode" => 100);
 
-sub bindings_VT
+sub init_VT
 {
     # Style definition
     owl::command("style VT perl BarnOwl::Module::VT_ASedeno::format_msg");
 
     # Command aliases
     owl::command("alias VT view -s VT");
-
-    # Keybinding
-    owl::command('bindkey recv "C-s C-v" command VT');
 }
 
 #Turn zsigs on or off
@@ -143,12 +147,16 @@ sub format_VT($)
     my $m = shift;
 
     # Extract time from message
-    my ($time) = $m->time =~ /(\d\d:\d\d)/;
+    my $time = format_time($m);
 
     # Deal with PING messages, assuming owl's rxping variable is true.
     if ($m->is_ping)
     {
-	return("\@bold(PING) from \@bold(".$m->pretty_sender.")\n");
+        if($m->direction eq 'in') {
+            return("\@bold(PING) from \@bold(".$m->pretty_sender.")\n");
+        } else {
+            return("\@bold(PING) to \@bold(".$m->pretty_recipient.")\n");
+        }
     }
 
     # Deal with login/logout messages
@@ -286,7 +294,7 @@ sub format_VT_AIM($)
     my $m = shift;
 
     # Extract time from message
-    my ($time) = $m->time =~ /(\d\d:\d\d)/;
+    my $time = format_time($m);
 
     # Deal with login/logout messages
     if ($m->is_login())
@@ -344,7 +352,7 @@ sub format_VT_jabber($)
     my $m = shift;
 
     # Extract time from message
-    my ($time) = $m->time =~ /(\d\d:\d\d)/;
+    my $time = format_time($m);
 
     # Deal with login/logout messages
     if ($m->is_login())
@@ -423,7 +431,7 @@ sub format_VT_IRC($)
     my $m = shift;
 
     # Extract time from message
-    my ($time) = $m->time =~ /(\d\d:\d\d)/;
+    my $time = format_time($m);
 
     # Deal with login/logout messages
     if ($m->is_login())
