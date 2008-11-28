@@ -59,6 +59,10 @@ sub format_msg($)
     {
         return format_VT_IRC($m);
     }
+    elsif (lc $m->type eq 'twitter')
+    {
+        return format_VT_twitter($m);
+    }
     elsif ($m->is_admin)
     {
 	return "\@bold(OWL ADMIN):\t".$m->body;
@@ -512,6 +516,44 @@ sub tag_youtube {
 }
 
 ################################################################################
+# Functions to format Twitter messages.
+################################################################################
+sub format_VT_twitter($)
+{
+    my $m = shift;
+
+    # Extract time from message
+    my $time = format_time($m);
+
+    my $user = $m->sender;
+    $user =~ s/\xE2\x99\xb3/1/g; 
+
+    my ($body, $hostSep) = format_body($m);
+
+    # Now build the message.
+    my $zVT = "";
+    my $cols = owl::getnumcols();
+    if ($cols < $VT_Options{"narrowMode"})
+    {
+        my $wHost = $cols - (3+6+16+5+16+1+5+1);
+	$zVT = sprintf("From: %-16.16s To: %-16.16s %5s \n%s",
+		       $user,
+		       "twitter",
+		       $time,
+		       $body);
+    }
+    else
+    {
+	$zVT = sprintf("%-10.10s %5s %-18.18s <%s",
+		       $user,
+		       $time,
+		       "twitter",
+		       $body);
+    }
+    return $zVT;
+}
+
+################################################################################
 # Universal body formatter.
 ################################################################################
 sub format_body
@@ -681,7 +723,7 @@ sub format_body
 	$hostStr =~ s/.*\@//;
       }
 
-      $strlen = (length $1) if $body =~ /\s+(\S.+)$/;
+      $strlen = (length BarnOwl::ztext_stylestrip($1)) if $body =~ /\s+(\S.+)$/;
       if ($hostAlone || (($strlen + 4 + length($hostStr)) >= $hostwidth)) {
 	$body .= "\n";
 	$body .= sprintf("%".($width)."s",
