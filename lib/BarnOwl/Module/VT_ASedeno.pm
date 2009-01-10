@@ -187,24 +187,24 @@ sub format_VT($)
     {
 	# Since personal is the default instance, strip it and just use the
 	# class name.
-	$dest = $m->context;
+	$dest = clean_utf8($m->context);
     }
     elsif (lc($m->class) eq 'message')
     {
 	# Since message is the default class, strip it and just use the
 	# instance name, in square brackets.
-	$dest = '['.$m->instance.']';
+	$dest = '['.clean_utf8($m->instance).']';
     }
     else
     {
 	# If the defaults aren't being used, show both class and instance.
-	$dest = $m->context.'['.$m->instance.']';
+	$dest = clean_utf8($m->context).'['.clean_utf8($m->instance).']';
     }
 
     $dest =~ s/[[:cntrl:]]//g;
 
     # Extract user/authentication information from the message.
-    my $user = $m->pretty_sender;
+    my $user = clean_utf8($m->pretty_sender);
 
     my $auth;
 
@@ -214,7 +214,7 @@ sub format_VT($)
     # outbound.
     if (lc($m->direction) eq 'out')
     {
-	$user = "->".$m->recipient;
+	$user = "->".clean_utf8($m->recipient);
 	$user =~ s/\@ATHENA\.MIT\.EDU//;
 	$dest = '[personal]';
 	$auth = '>';
@@ -444,16 +444,24 @@ sub format_VT_IRC($)
       return sprintf("\@b(%-10.10s) %s %s",
 		     "JOIN",
 		     $time,
-		     boldify($m->sender." ($chan)"));
+		     boldify($m->sender . (defined($chan) ? " ($chan)" : "")));
     }
 
     if ($m->is_logout())
     {
-      my $chan = $m->channel;
-      return sprintf("\@b(%-10.10s) %s %s",
-		     "PART",
-		     $time,
-		     boldify($m->sender." ($chan)"));
+        if(defined($m->channel)) {
+            my $chan = $m->channel;
+            return sprintf("\@b(%-10.10s) %s %s",
+                           "PART",
+                           $time,
+                           boldify($m->sender . " ($chan)"));
+        } else {
+            my $reason = $m->{reason};
+            return sprintf("\@b(%-10.10s) %s %s",
+                           "QUIT",
+                           $time,
+                           boldify($m->sender . " ($reason)"));
+        }
     }
 
     my $dir = (lc($m->direction) eq 'out') ? '>' : '<';
@@ -518,6 +526,19 @@ sub tag_youtube {
 ################################################################################
 # Functions to format Twitter messages.
 ################################################################################
+
+sub format_twitter_links {
+    my $body = shift;
+    my @users;
+    $body =~ s/@(\w+)/push @users, $1; "${1} [@{[scalar @users]}]"/ge;
+    my $i = 1;
+    for my $u (@users) {
+        $body .= "\n[$i] http://twitter.com/$u";
+        $i++;
+    }
+    return $body;
+}
+
 sub format_VT_twitter($)
 {
     my $m = shift;
@@ -550,7 +571,11 @@ sub format_VT_twitter($)
 		       "twitter",
 		       $body);
     }
-    return $zVT;
+    if($m->is_private) {
+        return boldify($zVT);
+    } else {
+        return $zVT;
+    }
 }
 
 ################################################################################
@@ -597,6 +622,10 @@ sub format_body
       $rawBody = decode('MIME-Header', $rawBody);
   } else {
       $rawBody = clean_utf8($rawBody);
+  }
+
+  if(lc $m->type eq 'twitter') {
+      $rawBody = format_twitter_links($rawBody);
   }
 
   $rawBody = tag_youtube($rawBody);
