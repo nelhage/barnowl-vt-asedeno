@@ -565,10 +565,11 @@ sub format_VT_twitter($)
     }
     else
     {
-	$zVT = sprintf("%-10.10s %5s %-18.18s <%s",
+	$zVT = sprintf("%-10.10s %5s %-18.18s %s%s",
 		       $user,
 		       $time,
 		       "twitter",
+                       $m->is_outgoing ? ">" : "<",
 		       $body);
     }
     if($m->is_private) {
