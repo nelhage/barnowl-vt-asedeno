@@ -133,11 +133,17 @@ sub clean_utf8 {
     return $text;
 }
 
-sub zescape {
+sub maybe_zescape {
     my $text = shift;
     if(BarnOwl::getvar('vta:escape_formatting') eq 'on') {
-        $text =~ s/@/@@/g;
+        return zescape($text);
     }
+    return $text;
+}
+
+sub zescape {
+    my $text = shift;
+    $text =~ s/@/@@/g;
     return $text;
 }
 
@@ -193,12 +199,12 @@ sub format_VT($)
     {
 	# Since message is the default class, strip it and just use the
 	# instance name, in square brackets.
-	$dest = '['.clean_utf8($m->instance).']';
+	$dest = '['.zescape(clean_utf8($m->instance)).']';
     }
     else
     {
 	# If the defaults aren't being used, show both class and instance.
-	$dest = clean_utf8($m->context).'['.clean_utf8($m->instance).']';
+	$dest = zescape(clean_utf8($m->context).'['.clean_utf8($m->instance).']');
     }
 
     $dest =~ s/[[:cntrl:]]//g;
@@ -617,7 +623,7 @@ sub format_body
   # Basically, double up the '@'s in these formatting messages such that they
   # no longer work. Also, fix backspace issues.
   $rawBody =~ s/\@font\(fixed\)$//; # GAIM is broken.
-  $rawBody = zescape($rawBody);
+  $rawBody = maybe_zescape($rawBody);
 
   if($m->type eq 'zephyr' && $m->class eq 'MAIL') {
       $rawBody = decode('MIME-Header', $rawBody);
@@ -700,7 +706,7 @@ sub format_body
       # Kill leading whitespace
       $sig =~ s/^\s*//;
 
-      $sig = zescape($sig);
+      $sig = maybe_zescape($sig);
 
       # Unlike zephyr bodies, I'm unwrapping zsigs no matter what.
       my @words = split (/\s+/, $sig);
