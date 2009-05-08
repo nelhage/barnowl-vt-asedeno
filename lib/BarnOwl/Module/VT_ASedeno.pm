@@ -686,7 +686,8 @@ sub format_body
     $body = autoformat $rawBody, {left => $hwidth + 1,
                                   right => $hwidth + $bwidth - 2,
                                   all => 1,
-                                  renumber => 0};
+                                  renumber => 0,
+                                  lists => 0};
     $body = "" unless defined($body);
     $body =~ s/^\s+/ /;
     $body =~ s/\s+$//;
