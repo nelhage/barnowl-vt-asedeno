@@ -552,8 +552,7 @@ sub format_VT_twitter($)
     # Extract time from message
     my $time = format_time($m);
 
-    my $user = $m->sender;
-    $user =~ s/\xE2\x99\xb3/1/g; 
+    my $user = $m->is_outgoing ? $m->recipient : $m->sender;
 
     my ($body, $hostSep) = format_body($m);
 
@@ -572,7 +571,7 @@ sub format_VT_twitter($)
     else
     {
 	$zVT = sprintf("%-10.10s %5s %-18.18s %s%s",
-		       $user,
+		       $m->is_outgoing ? "->$user" : $user,
 		       $time,
 		       "twitter",
                        $m->is_outgoing ? ">" : "<",
