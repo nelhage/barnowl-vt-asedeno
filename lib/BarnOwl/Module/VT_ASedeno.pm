@@ -3,6 +3,8 @@ use warnings;
 
 package BarnOwl::Module::VT_ASedeno;
 
+our $VERSION = 0.1;
+
 use BarnOwl::Hooks;
 
 use Text::Autoformat;
