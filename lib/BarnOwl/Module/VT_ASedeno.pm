@@ -428,10 +428,14 @@ sub format_VT_jabber($)
 		       $dest,
 		       $body);
     }
-    if (($m->is_personal || lc($m->direction) eq 'out'))
+
+    if (($m->is_personal || lc($m->direction) eq 'out') &&
+        ($m->sender !~ /im.partych.at/) &&
+        ($m->recipient !~ /im.partych.at/))
     {
 	return boldify($zVT);
     }
+
     return $zVT;
 }
 
